@@ -10,10 +10,9 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.charfilter.HTMLStripCharFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.miscellaneous.LengthFilter;
-import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.tartarus.snowball.ext.EnglishStemmer;
 
 public class CustomAnalyzer extends StopwordAnalyzerBase {
 
@@ -45,7 +44,7 @@ public class CustomAnalyzer extends StopwordAnalyzerBase {
 			filter = source;
 			filter = new LowerCaseFilter(filter);
 			filter = new StopFilter(filter, this.stopwords);
-			filter = new SnowballFilter(filter, new EnglishStemmer());
+			filter = new PorterStemFilter(filter);
 		}
 
 		return new TokenStreamComponents(source, filter);

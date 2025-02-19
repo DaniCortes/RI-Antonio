@@ -54,6 +54,9 @@ public class CustomIndex {
 
 	CustomIndex() throws IOException, TikaException, SAXException, CsvValidationException {
 		setIndexConfiguration();
+	}
+
+	public void index() throws TikaException, IOException, SAXException, CsvValidationException {
 		indexFiles();
 	}
 
@@ -147,7 +150,7 @@ public class CustomIndex {
 	private Document createQuestionDoc(Question question, List<String> tags) {
 		Document doc = new Document();
 
-		doc.add(new StringField("type", "question", Store.NO));
+		doc.add(new StringField("type", "question", Store.YES));
 
 		doc.add(new StringField("id", question.getId(), Store.YES));
 
@@ -251,29 +254,29 @@ public class CustomIndex {
 		QueryParser queryParser = new QueryParser("body", analyzer);
 		Query query = queryParser.parse(queryString);
 
-		TopDocs results = searcher.search(query, 10);
+		TopDocs hits = searcher.search(query, 10);
 		StoredFields storedFields = searcher.storedFields();
 
-		for (ScoreDoc scoreDoc : results.scoreDocs) {
-			Document doc = storedFields.document(scoreDoc.doc);
+		QueryParser parentDocQueryParser = new QueryParser("id", analyzer);
+
+		for (ScoreDoc hit : hits.scoreDocs) {
+			Document doc = storedFields.document(hit.doc);
 			if (doc.get("type").equals("question")) {
 				String title = doc.get("title");
 				String id = doc.get("id");
-				float score = scoreDoc.score;
+				float score = hit.score;
 				rankedDocuments.add(new DocumentRank(title, id, score));
 			}
 			else {
-				// String parentId = doc.get("parentId");
-				// Document parentDoc = indexReader.doc(Integer.parseInt(parentId));
-				// String title = parentDoc.get("title");
+				String parentId = doc.get("parentId");
+				Query parentDocQuery = parentDocQueryParser.parse(parentId);
+				TopDocs parentHits = searcher.search(parentDocQuery, 1);
+				Document parentDoc = storedFields.document(parentHits.scoreDocs[0].doc);
+				String title = parentDoc.get("title");
 				String id = doc.get("id");
-				float score = scoreDoc.score;
-				rankedDocuments.add(new DocumentRank("answer", id, score));
+				float score = hit.score;
+				rankedDocuments.add(new DocumentRank(title, id, score));
 			}
-			String title = doc.get("title");
-			String id = doc.get("id");
-			float score = scoreDoc.score;
-			rankedDocuments.add(new DocumentRank(title, id, score));
 		}
 		return rankedDocuments;
 	}
